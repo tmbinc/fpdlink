@@ -5,6 +5,7 @@ import sys
 import queue
 import threading
 import collections
+import binascii
 from usb_interp import USBInterpreter
 
 _lpath = (os.path.dirname(__file__))
@@ -510,6 +511,7 @@ class SDRAMRead:
             self.__buf = b""
             self.__services = services
             self.__verbose = verbose
+            self.f = open("dump.bin", "wb")
 
         def matchMagic(self, byt):
             return byt == 0xD0
@@ -519,6 +521,8 @@ class SDRAMRead:
 
         def consume(self, b):
             #print("SDRAM", ''.join("%02x"% r for r in b))
+            self.f.write(b[2:])
+            return
             b = b[2:]
             if self.__verbose and b:
                 print("SD> %s" % " ".join("%02x" % i for i in b))

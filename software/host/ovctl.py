@@ -258,7 +258,7 @@ def sniff(dev, speed, format, out, timeout):
     elapsed_time = 0
     try:
         dev.regs.CSTREAM_CFG.wr(1)
-        while 1:
+        while elapsed_time < 2:
             dev.regs.SDRAM_SINK_PTR_READ.wr(0)
             dev.regs.OVF_INSERT_CTL.wr(0)
 
@@ -358,6 +358,76 @@ def eeperase(dev):
 @command('eep-program', ('serialno', int))
 def eepprogram(dev, serialno):
     dev.dev.eeprom_program(serialno)
+    
+@command('fpddebug', ('mux', int))
+def fpddebug(dev, mux):
+    dev.regs.FPDTOP_DEBUG_MUX.wr(mux)
+
+@command('setfpd', ('adjust', int), ('invert', int))
+def setfpd(dev, adjust, invert):
+    dev.regs.FPDTOP_ADJUST_DIRECTION.wr(0)
+    dev.regs.FPDTOP_ADJUST.wr(adjust)
+    dev.regs.FPDTOP_INVERT.wr(invert)
+    dev.regs.FPDTOP_ADJPTOTAL.rd()
+
+    import time
+    while True:
+        dev.regs.FPDTOP_UPDATE_COUNTER.wr(1)
+        dev.regs.FPDTOP_UPDATE_COUNTER.wr(0)
+        dev.regs.FPDTOP_ADJPTOTAL.rd()
+        lp, lm = dev.regs.FPDTOP_ADJPTOTAL.rd(), dev.regs.FPDTOP_ADJMTOTAL.rd()
+        time.sleep(.1)
+        dev.regs.FPDTOP_UPDATE_COUNTER.wr(1)
+        dev.regs.FPDTOP_UPDATE_COUNTER.wr(0)
+        dev.regs.FPDTOP_ADJPTOTAL.rd()
+        mp, mm = dev.regs.FPDTOP_ADJPTOTAL.rd(), dev.regs.FPDTOP_ADJMTOTAL.rd()
+        print("%08x %08x %08x %08x lock=%d" % (lp, lm, mp, mm, dev.regs.FPDTOP_LOCK.rd()), end=' ')
+        dp = mp - lp
+        dm = mm - lm
+        if dp < 0:
+            dp += 1<<32
+        if dm < 0:
+            dm += 1<<32
+        print("%1.3f tot=%3.5f" % (dp/dm, (dp + dm) / 1e6))
+            
+@command('fpds')
+def fpds(dev):
+    import time
+    lm = 0
+    lp = 0
+    for adjust in range(0x4000, 0x5000, 0x100):
+        for invert in [0, 0, 0, 1]:
+            dev.regs.FPDTOP_ADJUST_DIRECTION.wr((adjust >= 0) and 0 or 1)
+            dev.regs.FPDTOP_ADJUST.wr(abs(adjust))
+            dev.regs.FPDTOP_ADJUST.wr(abs(adjust))
+            dev.regs.FPDTOP_INVERT.wr(invert)
+            dev.regs.FPDTOP_UPDATE_COUNTER.rd()
+            
+            dev.regs.FPDTOP_UPDATE_COUNTER.wr(1)
+            dev.regs.FPDTOP_UPDATE_COUNTER.wr(0)
+            lp, lm = dev.regs.FPDTOP_ADJPTOTAL.rd(), dev.regs.FPDTOP_ADJMTOTAL.rd()
+            time.sleep(.1)
+            dev.regs.FPDTOP_UPDATE_COUNTER.wr(1)
+            dev.regs.FPDTOP_UPDATE_COUNTER.wr(0)
+            mp, mm = dev.regs.FPDTOP_ADJPTOTAL.rd(), dev.regs.FPDTOP_ADJMTOTAL.rd()
+            dp = mp - lp
+            dm = mm - lm
+            if dp < 0:
+                dp += 1<<32
+            if dm < 0:
+                dm += 1<<32
+#                print("adj %d, %d" % (dp, dm), dp / dm, (dp + dm) / 1e6)
+#                lp = mp
+#                lm = mm
+#            print("%1.3f %3.5f" % (dp/dm, (dp + dm) / 1e6), end = ' / ')
+            print("ADJUST %-05x: " % adjust, end=' ')
+            if dev.regs.FPDTOP_LOCK.rd():
+                print(">>>>")
+#            print("%1.3f" % (dp/dm), end = invert and '\n' or ' ')
+            print("%3.1f" % ((dp + dm) / 1e6), end = '|')
+            sys.stdout.flush()
+        print()
+        
 
 @command('sdram_host_read_test')
 def sdram_host_read_test(dev):
@@ -479,7 +549,7 @@ def main():
 
     dev = LibOV.OVDevice(mapfile=args.pkg.open('map.txt', 'r'), verbose=args.verbose)
 
-    err = dev.open(bitstream=args.pkg.open('ov3.bit', 'r') if args.load else None)
+    err = dev.open(bitstream=args.pkg.open('top.bit', 'r') if args.load else None)
 
     if err:
         if err == -4:
@@ -492,7 +562,7 @@ def main():
         print("FPGA not loaded, forcing reload")
         dev.close()
 
-        err = dev.open(bitstream=args.pkg.open('ov3.bit','r'))
+        err = dev.open(bitstream=args.pkg.open('top.bit','r'))
 
     if err:
         print("USB: Error opening device (2)\n")

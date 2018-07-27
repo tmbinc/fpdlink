@@ -23,6 +23,7 @@ from ovhw.cfilt import RXCmdFilter
 from ovhw.ov_types import ULPI_DATA_D
 from ovhw.sdram_host_read import SDRAM_Host_Read
 from ovhw.sdram_sink import SDRAM_Sink
+from ovhw.fpdrecv import FpdTop
 import ovplatform.sdram_params
 
 # Top level platform module
@@ -34,6 +35,8 @@ class OV3(Module):
 
         self.submodules.clockgen = clocking.ClockGen(clk_ref)
         self.clock_domains.cd_sys = self.clockgen.cd_sys
+        self.clock_domains.cd_pix1x = self.clockgen.cd_pix1x
+        self.clock_domains.cd_pix8x = self.clockgen.cd_pix8x
 
         # SDRAM Controller
         sd_param = ovplatform.sdram_params.getSDRAMParams('mt48lc16m16a2')
@@ -105,9 +108,19 @@ class OV3(Module):
                 self.ovf_insert.source.connect(self.udata_fifo.sink),
                 self.udata_fifo.source.connect(self.cfilt.sink),
                 self.cfilt.source.connect(self.cstream.sink),
-                self.cstream.source.connect(self.sdram_sink.sink),
+#                self.cstream.source.connect(self.sdram_sink.sink),
                 ]
 
+        # FPD receiver
+        lvds_in = Cat(plat.request('spare', 0), plat.request('spare', 1))
+        debug = Cat(plat.request('spare', i) for i in range(2, 2+14))
+        
+        self.submodules.fpdtop = FpdTop(lvds_in, debug)
+        self.comb += [
+            self.fpdtop.source.connect(self.sdram_sink.sink),
+            self.fpdtop.serdesstrobe.eq(self.clockgen.serdesstrobe)
+        ]
+        
         # FTDI bus interface
         ftdi_io = plat.request("ftdi")
         self.submodules.ftdi_bus = ftdi_bus = FTDI_sync245(self.clockgen.cd_sys.rst,
@@ -123,10 +136,8 @@ class OV3(Module):
                 [
                     [self.bist.busy, self.ftdi_bus.tx_ind],
                     [0, self.ftdi_bus.rx_ind],
-                    [0]
+                    [self.fpdtop.lock]
                 ], active=0)
-
-        self.submodules.buttons = BTN_status(~plat.request('btn'))
 
 
         # Bind all device CSRs
@@ -140,6 +151,7 @@ class OV3(Module):
                 'sdram_host_read' : 6,
                 'sdram_sink' : 7,
                 'ovf_insert' : 8,
+                'fpdtop': 9,
                 }
 
         self.submodules.csrbankarray = CSRBankArray(self,

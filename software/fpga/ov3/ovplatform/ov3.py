@@ -7,7 +7,7 @@ _io = [
 
     ("btn", 0, Pins("P67"), IOStandard("LVCMOS33")),
 
-    ("clk50", 0, Pins("P94"), IOStandard("LVCMOS33")),
+#    ("clk50", 0, Pins("P94"), IOStandard("LVCMOS33")),
     ("clk12", 0, Pins("P50"), IOStandard("LVCMOS33")),
 
     ("ulpi", 0, 
@@ -38,28 +38,29 @@ _io = [
         IOStandard("LVCMOS33"), Misc("SLEW=FAST")
     ),
 
-    ("spare", 2, Pins("P102"), IOStandard("LVCMOS33")),
-    ("spare", 3, Pins("P101"), IOStandard("LVCMOS33")),
-    ("spare", 4, Pins("P100"), IOStandard("LVCMOS33")),
-    ("spare", 5, Pins("P99"), IOStandard("LVCMOS33")),
-    ("spare", 6, Pins("P98"), IOStandard("LVCMOS33")),
-    ("spare", 7, Pins("P97"), IOStandard("LVCMOS33")),
-    ("spare", 8, Pins("P95"), IOStandard("LVCMOS33")),
-    ("spare", 9, Pins("P94"), IOStandard("LVCMOS33")),
-    ("spare", 10, Pins("P93"), IOStandard("LVCMOS33")),
-    ("spare", 11, Pins("P92"), IOStandard("LVCMOS33")),
-    ("spare", 12, Pins("P88"), IOStandard("LVCMOS33")),
-    ("spare", 13, Pins("P87"), IOStandard("LVCMOS33")),
-    ("spare", 14, Pins("P85"), IOStandard("LVCMOS33")),
-    ("spare", 15, Pins("P84"), IOStandard("LVCMOS33")),
-    ("spare", 16, Pins("P83"), IOStandard("LVCMOS33")),
-    ("spare", 17, Pins("P82"), IOStandard("LVCMOS33")),
-    ("spare", 18, Pins("P81"), IOStandard("LVCMOS33")),
-    ("spare", 19, Pins("P80"), IOStandard("LVCMOS33")),
-    ("spare", 20, Pins("P79"), IOStandard("LVCMOS33")),
-    ("spare", 21, Pins("P78"), IOStandard("LVCMOS33")),
-    ("spare", 22, Pins("P75"), IOStandard("LVCMOS33")),
-    ("spare", 23, Pins("P74"), IOStandard("LVCMOS33")),
+    ("spare", 0, Pins("P102"), IOStandard("LVDS_33"), Misc("DIFF_TERM=TRUE")),
+    ("spare", 1, Pins("P101"), IOStandard("LVDS_33"), Misc("DIFF_TERM=TRUE")),
+    ("spare", 2, Pins("P100"), IOStandard("LVCMOS33")),
+    ("spare", 3, Pins("P99"), IOStandard("LVCMOS33")),
+    ("spare", 4, Pins("P98"), IOStandard("LVCMOS33")),
+    ("spare", 5, Pins("P97"), IOStandard("LVCMOS33")),
+    ("spare", 6, Pins("P95"), IOStandard("LVCMOS33")),
+    ("spare", 7, Pins("P94"), IOStandard("LVCMOS33")),
+    ("spare", 8, Pins("P93"), IOStandard("LVCMOS33")),
+    ("spare", 9, Pins("P92"), IOStandard("LVCMOS33")),
+    ("spare", 10, Pins("P88"), IOStandard("LVCMOS33")),
+    ("spare", 11, Pins("P87"), IOStandard("LVCMOS33")),
+    ("spare", 12, Pins("P85"), IOStandard("LVCMOS33")),
+    ("spare", 13, Pins("P84"), IOStandard("LVCMOS33")),
+    ("spare", 14, Pins("P83"), IOStandard("LVCMOS33")),
+    ("spare", 15, Pins("P82"), IOStandard("LVCMOS33")),
+    ("spare", 16, Pins("P81"), IOStandard("LVCMOS33")),
+    ("spare", 17, Pins("P80"), IOStandard("LVCMOS33")),
+    ("spare", 18, Pins("P79"), IOStandard("LVCMOS33")),
+    ("spare", 19, Pins("P78"), IOStandard("LVCMOS33")),
+
+    ("trig_in", 0, Pins("P75"), IOStandard("LVCMOS33")),
+    ("trig_out", 0, Pins("P74"), IOStandard("LVCMOS33")),
 
     ("sdram", 0,
         Subsignal("clk", Pins("P24")),
@@ -87,11 +88,11 @@ class Platform(XilinxPlatform):
 
     def do_finalize(self, fragment):
         # Add the CRG
-        crg = CRG(self.request("clk50"))
-        fragment += crg.get_fragment()
+#        crg = CRG(self.request("clk12"))
+#        fragment += crg.get_fragment()
 
         clocks = {
-            "clk50": 50.0,
+#            "clk50": 50.0,
             "clk12": 12.0,
             ("ulpi", "clk"): 60.0,
             ("ftdi", "clk"): 60.0

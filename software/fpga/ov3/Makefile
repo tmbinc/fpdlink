@@ -2,7 +2,7 @@ PYTHONPATH := ../migen:../misoc
 export PYTHONPATH
 OVCTL := ../../host/ovctl.py
 BUILD := build
-BITFILE := $(BUILD)/ov3.bit
+BITFILE := $(BUILD)/top.bit
 FWPKG := $(BUILD)/ov3.fwpkg
 
 PYTHON := python3
