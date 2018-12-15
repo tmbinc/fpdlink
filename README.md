@@ -1,4 +1,4 @@
-ov_ftdi
-=======
+FPD-Link II Receiver
+====================
 
-FTDI-based OV experiment
+Based on OpenVizsla, this is an FPD-Link II receiver.
